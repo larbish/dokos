@@ -7,18 +7,24 @@
 </template>
 
 <script setup>
+import { nodeTextContent } from '@nuxtjs/mdc/runtime/utils/node'
+
 const el = ref(null)
 const rendered = ref(false)
+const rerenderCounter = ref(1)
 const slots = useSlots()
 
 const mermaidSyntax = computed(() => {
+  // Trick to force re-render when the slot content changes (for preview inside studio)
+  rerenderCounter.value
+
   const defaultSlot = slots.default?.()[0]
   if (!defaultSlot) {
     return ''
   }
 
   // Old syntax with text node
-  if (defaultSlot.children instanceof String) {
+  if (typeof defaultSlot.children === 'string') {
     return defaultSlot.children
   }
 
@@ -28,8 +34,18 @@ const mermaidSyntax = computed(() => {
     return ''
   }
 
-  return codeChild.children[0]?.children || ''
+  // New syntax without highlight
+  if (typeof codeChild.children === 'string') {
+    return codeChild.children
+  }
+
+  // New syntax with highlight
+  return nodeTextContent(codeChild.children)
 })
+
+// watch(mermaidSyntax, () => {
+//   render()
+// })
 
 async function render() {
   if (!el.value) {
@@ -51,6 +67,10 @@ async function render() {
   rendered.value = true
   await mermaid.run({ nodes: [el.value] })
 }
+
+onBeforeUpdate(() => {
+  rerenderCounter.value++
+})
 
 onMounted(() => {
   render()
