@@ -18,7 +18,7 @@ const mermaidSyntax = computed(() => {
   }
 
   // Old syntax with text node
-  if (typeof defaultSlot.children === 'string') {
+  if (defaultSlot.children instanceof String) {
     return defaultSlot.children
   }
 
