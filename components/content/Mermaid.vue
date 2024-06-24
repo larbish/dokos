@@ -1,12 +1,35 @@
 <template>
+  <!-- Keep this to fetch `default` slot in metadata -->
+  <slot v-if="false" />
   <pre ref="el" :style="{ display: rendered ? 'block' : 'none' }" class="not-prose">
-    <slot />
+    {{ mermaidSyntax }}
   </pre>
 </template>
 
 <script setup>
 const el = ref(null)
 const rendered = ref(false)
+const slots = useSlots()
+
+const mermaidSyntax = computed(() => {
+  const defaultSlot = slots.default?.()[0]
+  if (!defaultSlot) {
+    return ''
+  }
+
+  // Old syntax with text node
+  if (typeof defaultSlot.children === 'string') {
+    return defaultSlot.children
+  }
+
+  // New syntax with code node
+  const codeChild = defaultSlot.children?.default()[0]
+  if (codeChild.type !== 'code') {
+    return ''
+  }
+
+  return codeChild.children[0]?.children || ''
+})
 
 async function render() {
   if (!el.value) {
@@ -17,7 +40,7 @@ async function render() {
     return
   }
 
-  // Iterate children to remove comments
+  // // Iterate children to remove comments
   for (const child of el.value.childNodes) {
     if (child.nodeType === Node.COMMENT_NODE) {
       el.value.removeChild(child)
